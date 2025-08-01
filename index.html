@@ -1,0 +1,569 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Summarizer with Hugging Face - Tutorial</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .step-card {
+            transition: all 0.3s ease;
+        }
+        .step-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        .code-block {
+            font-family: 'Courier New', monospace;
+        }
+        .terminal {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .terminal-header {
+            background: #2d2d2d;
+            padding: 8px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .terminal-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .red { background: #ff5f56; }
+        .yellow { background: #ffbd2e; }
+        .green { background: #27c93f; }
+        .terminal-body {
+            padding: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .command {
+            color: #569cd6;
+        }
+        .output {
+            color: #d4d4d4;
+        }
+        .success {
+            color: #60d394;
+        }
+        .warning {
+            color: #ffcc00;
+        }
+        .progress-step {
+            position: relative;
+            padding-left: 32px;
+            margin-bottom: 24px;
+        }
+        .progress-step:before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 6px;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            z-index: 1;
+        }
+        .progress-step:after {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 22px;
+            bottom: -12px;
+            width: 2px;
+            background: #e5e7eb;
+        }
+        .progress-step:last-child:after {
+            display: none;
+        }
+        .active:before {
+            background: #8b5cf6;
+            box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-slate-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-6xl">
+        <!-- Header -->
+        <header class="text-center mb-12">
+            <div class="flex items-center justify-center mb-4">
+                <div class="bg-gradient-to-r from-purple-600 to-blue-500 p-3 rounded-xl mr-4">
+                    <i class="fas fa-robot text-white text-2xl"></i>
+                </div>
+                <h1 class="text-4xl font-bold text-gray-800">Text Summarizer with Hugging Face</h1>
+            </div>
+            <p class="text-xl text-gray-600 mb-2">Complete Guide: From Google Colab to Production</p>
+            <div class="flex items-center justify-center gap-4 text-sm text-gray-500">
+                <span class="flex items-center"><i class="fas fa-database mr-1"></i> Dataset</span>
+                <span class="flex items-center"><i class="fas fa-cogs mr-1"></i> Training</span>
+                <span class="flex items-center"><i class="fas fa-chart-line mr-1"></i> Evaluation</span>
+                <span class="flex items-center"><i class="fas fa-save mr-1"></i> Save & Predict</span>
+            </div>
+        </header>
+
+        <!-- Overview Section -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-info-circle mr-3 text-blue-500"></i>
+                Project Overview
+            </h2>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <p class="text-gray-700 mb-4">
+                        This tutorial guides you through building a text summarization model using Hugging Face Transformers, 
+                        trained on Google Colab with free GPU access. We'll use state-of-the-art models like BART or T5 
+                        to generate concise summaries from longer text documents.
+                    </p>
+                    <div class="bg-blue-50 p-4 rounded-lg mb-4">
+                        <h3 class="font-semibold text-blue-800 mb-2">Key Components:</h3>
+                        <ul class="text-blue-700 space-y-1">
+                            <li><i class="fas fa-check-circle mr-2"></i> Hugging Face Transformers library</li>
+                            <li><i class="fas fa-check-circle mr-2"></i> Google Colab with GPU acceleration</li>
+                            <li><i class="fas fa-check-circle mr-2"></i> Pre-trained models (BART, T5, etc.)</li>
+                            <li><i class="fas fa-check-circle mr-2"></i> Custom dataset processing</li>
+                            <li><i class="fas fa-check-circle mr-2"></i> Fine-tuning and evaluation</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-indigo-50 p-6 rounded-xl">
+                    <h3 class="font-bold text-gray-800 mb-4">Why This Approach?</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start">
+                            <div class="bg-green-100 p-2 rounded-full mr-3 mt-1">
+                                <i class="fas fa-bolt text-green-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Free GPU Access</h4>
+                                <p class="text-sm text-gray-600">Google Colab provides free GPU/TPU resources</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-blue-100 p-2 rounded-full mr-3 mt-1">
+                                <i class="fas fa-rocket text-blue-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">State-of-the-Art Models</h4>
+                                <p class="text-sm text-gray-600">Leverage pre-trained models from Hugging Face</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start">
+                            <div class="bg-purple-100 p-2 rounded-full mr-3 mt-1">
+                                <i class="fas fa-sync-alt text-purple-600"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-semibold text-gray-800">Easy Fine-Tuning</h4>
+                                <p class="text-sm text-gray-600">Transfer learning with minimal code</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step-by-Step Guide -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-8 flex items-center">
+                <i class="fas fa-list-ol mr-3 text-purple-500"></i>
+                Step-by-Step Implementation
+            </h2>
+            
+            <div class="space-y-1">
+                <!-- Step 1 -->
+                <div class="progress-step active">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">1. Setup Google Colab Environment</h3>
+                    <p class="text-gray-600 mb-4">Initialize your Google Colab notebook with GPU support and install required libraries.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Colab Notebook</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">!pip install transformers datasets torch accelerate sentencepiece</span></div>
+                            <div class="output mb-2"># Installing required packages...</div>
+                            <div class="mb-2"><span class="command">!pip install rouge-score nltk</span></div>
+                            <div class="output mb-2"># For evaluation metrics</div>
+                            <div class="mb-2"><span class="command">import torch</span></div>
+                            <div class="mb-2"><span class="command">device = torch.device("cuda" if torch.cuda.is_available() else "cpu")</span></div>
+                            <div class="output success">GPU available: True</div>
+                            <div class="output success">Using device: cuda</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500">Enable GPU: Runtime → Change runtime type → Hardware accelerator → GPU</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">2. Load and Prepare Dataset</h3>
+                    <p class="text-gray-600 mb-4">Load a summarization dataset and preprocess it for training.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Data Loading</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">from datasets import load_dataset</span></div>
+                            <div class="mb-2"><span class="command">dataset = load_dataset("cnn_dailymail", "3.0.0")</span></div>
+                            <div class="output mb-2"># Loading dataset: cnn_dailymail</div>
+                            <div class="output mb-2">DatasetDict({</div>
+                            <div class="output mb-2">    train: Dataset({</div>
+                            <div class="output mb-2">        features: ['article', 'highlights', 'id'],</div>
+                            <div class="output mb-2">        num_rows: 287113</div>
+                            <div class="output mb-2">    })</div>
+                            <div class="output mb-2">    validation: Dataset({</div>
+                            <div class="output mb-2">        num_rows: 13368</div>
+                            <div class="output mb-2">    })</div>
+                            <div class="output mb-2">    test: Dataset({</div>
+                            <div class="output mb-2">        num_rows: 11490</div>
+                            <div class="output mb-2">    })</div>
+                            <div class="output mb-2">})</div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500">Alternative datasets: xsum, news_summary, arxiv-summarization</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">3. Initialize Model and Tokenizer</h3>
+                    <p class="text-gray-600 mb-4">Load a pre-trained model and its corresponding tokenizer.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Model & Tokenizer</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">from transformers import AutoTokenizer, AutoModelForSeq2SeqLM</span></div>
+                            <div class="mb-2"><span class="command">model_name = "facebook/bart-large-cnn"</span></div>
+                            <div class="warning mb-2"># Alternative: "t5-small", "google/pegasus-xsum"</div>
+                            <div class="mb-2"><span class="command">tokenizer = AutoTokenizer.from_pretrained(model_name)</span></div>
+                            <div class="mb-2"><span class="command">model = AutoModelForSeq2SeqLM.from_pretrained(model_name)</span></div>
+                            <div class="mb-2"><span class="command">model.to(device)</span></div>
+                            <div class="output success">Model loaded successfully on GPU</div>
+                            <div class="output">BART Model Configuration:</div>
+                            <div class="output">- Layers: 12</div>
+                            <div class="output">- Hidden Size: 1024</div>
+                            <div class="output">- Parameters: ~400M</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">4. Data Preprocessing</h3>
+                    <p class="text-gray-600 mb-4">Tokenize the text data and prepare it for training.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Preprocessing</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">def preprocess_function(examples):</span></div>
+                            <div class="output mb-2">    inputs = [doc for doc in examples["article"]]</div>
+                            <div class="output mb-2">    targets = [summary for summary in examples["highlights"]]</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    model_inputs = tokenizer(inputs, max_length=1024, truncation=True)</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    with tokenizer.as_target_tokenizer():</div>
+                            <div class="output mb-2">        labels = tokenizer(targets, max_length=128, truncation=True)</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    model_inputs["labels"] = labels["input_ids"]</div>
+                            <div class="output mb-2">    return model_inputs</div>
+                            <div class="mb-2"><span class="command">tokenized_datasets = dataset.map(preprocess_function, batched=True)</span></div>
+                            <div class="output success">Dataset tokenized successfully</div>
+                            <div class="output">Tokenization complete:</div>
+                            <div class="output">- Input sequences: 287,113</div>
+                            <div class="output">- Max input length: 1024 tokens</div>
+                            <div class="output">- Max target length: 128 tokens</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 5 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">5. Training Configuration</h3>
+                    <p class="text-gray-600 mb-4">Set up training arguments and initialize the Trainer.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Training Setup</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">from transformers import TrainingArguments, Trainer</span></div>
+                            <div class="mb-2"><span class="command">training_args = TrainingArguments(</span></div>
+                            <div class="output mb-2">    output_dir="./summarization_model",</div>
+                            <div class="output mb-2">    num_train_epochs=3,</div>
+                            <div class="output mb-2">    per_device_train_batch_size=4,</div>
+                            <div class="output mb-2">    per_device_eval_batch_size=4,</div>
+                            <div class="output mb-2">    warmup_steps=500,</div>
+                            <div class="output mb-2">    weight_decay=0.01,</div>
+                            <div class="output mb-2">    logging_dir="./logs",</div>
+                            <div class="output mb-2">    logging_steps=100,</div>
+                            <div class="output mb-2">    evaluation_strategy="steps",</div>
+                            <div class="output mb-2">    eval_steps=500,</div>
+                            <div class="output mb-2">    save_steps=1000,</div>
+                            <div class="output mb-2">    load_best_model_at_end=True,</div>
+                            <div class="output mb-2">    report_to="none"  # Disable logging to external services</div>
+                            <div class="mb-2"><span class="command">)</span></div>
+                            <div class="mb-2"><span class="command">trainer = Trainer(</span></div>
+                            <div class="output mb-2">    model=model,</div>
+                            <div class="output mb-2">    args=training_args,</div>
+                            <div class="output mb-2">    train_dataset=tokenized_datasets["train"],</div>
+                            <div class="output mb-2">    eval_dataset=tokenized_datasets["validation"]</div>
+                            <div class="mb-2"><span class="command">)</span></div>
+                            <div class="output success">Training configuration complete</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 6 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">6. Model Training</h3>
+                    <p class="text-gray-600 mb-4">Start the fine-tuning process on your dataset.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Training</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">trainer.train()</span></div>
+                            <div class="output">***** Running training *****</div>
+                            <div class="output">Num examples = 287,113</div>
+                            <div class="output">Num Epochs = 3</div>
+                            <div class="output">Instantaneous batch size per device = 4</div>
+                            <div class="output">Total train batch size = 4</div>
+                            <div class="output">Steps per epoch = 71,778</div>
+                            <div class="output warning">Epoch 1/3: 10% [7,178/71,778] ████████▏ ETA: 2h 15m</div>
+                            <div class="output">  Train Loss: 2.845</div>
+                            <div class="output warning">Epoch 1/3: 50% [35,889/71,778] ████████████████████▏ ETA: 1h 8m</div>
+                            <div class="output">  Train Loss: 2.123</div>
+                            <div class="output warning">Epoch 2/3: 100% [71,778/71,778] █████████████████████████████ ETA: 0s</div>
+                            <div class="output success">Training completed successfully!</div>
+                            <div class="output">Total training time: 3h 42m</div>
+                            <div class="output">Final training loss: 1.456</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 7 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">7. Model Evaluation</h3>
+                    <p class="text-gray-600 mb-4">Evaluate the model's performance using ROUGE metrics.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Evaluation</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">import evaluate</span></div>
+                            <div class="mb-2"><span class="command">rouge = evaluate.load('rouge')</span></div>
+                            <div class="mb-2"><span class="command">def compute_metrics(eval_pred):</span></div>
+                            <div class="output mb-2">    predictions, labels = eval_pred</div>
+                            <div class="output mb-2">    decoded_preds = tokenizer.batch_decode(predictions, skip_special_tokens=True)</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    labels = np.where(labels != -100, labels, tokenizer.pad_token_id)</div>
+                            <div class="output mb-2">    decoded_labels = tokenizer.batch_decode(labels, skip_special_tokens=True)</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    result = rouge.compute(predictions=decoded_preds, references=decoded_labels)</div>
+                            <div class="output mb-2">    return result</div>
+                            <div class="mb-2"><span class="command">metrics = trainer.evaluate()</span></div>
+                            <div class="output success">Evaluation Results:</div>
+                            <div class="output">ROUGE-1: 42.34</div>
+                            <div class="output">ROUGE-2: 20.56</div>
+                            <div class="output">ROUGE-L: 39.87</div>
+                            <div class="output">Evaluation loss: 1.512</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 8 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">8. Save the Model</h3>
+                    <p class="text-gray-600 mb-4">Save the trained model and tokenizer for future use.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Saving Model</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command"># Save the model and tokenizer</span></div>
+                            <div class="mb-2"><span class="command">model.save_pretrained("./final_summarization_model")</span></div>
+                            <div class="mb-2"><span class="command">tokenizer.save_pretrained("./final_summarization_model")</span></div>
+                            <div class="output success">Model saved successfully!</div>
+                            <div class="output">Files saved to: ./final_summarization_model</div>
+                            <div class="output">- config.json</div>
+                            <div class="output">- pytorch_model.bin</div>
+                            <div class="output">- tokenizer.json</div>
+                            <div class="output">- tokenizer_config.json</div>
+                            <div class="output">- vocab.json</div>
+                            <div class="mb-2"><span class="command"># Optional: Save to Hugging Face Hub</span></div>
+                            <div class="warning"># model.push_to_hub("my-summarization-model")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 9 -->
+                <div class="progress-step">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">9. Make Predictions</h3>
+                    <p class="text-gray-600 mb-4">Use the trained model to generate summaries from new text.</p>
+                    <div class="terminal mb-4">
+                        <div class="terminal-header">
+                            <div class="terminal-dot red"></div>
+                            <div class="terminal-dot yellow"></div>
+                            <div class="terminal-dot green"></div>
+                            <span class="ml-2 text-sm text-gray-400">Prediction</span>
+                        </div>
+                        <div class="terminal-body">
+                            <div class="mb-2"><span class="command">def summarize_text(text, max_length=130, min_length=30):</span></div>
+                            <div class="output mb-2">    inputs = tokenizer([text], max_length=1024, return_tensors="pt", truncation=True).to(device)</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    summary_ids = model.generate(</div>
+                            <div class="output mb-2">        inputs["input_ids"],</div>
+                            <div class="output mb-2">        num_beams=4,</div>
+                            <div class="output mb-2">        max_length=max_length,</div>
+                            <div class="output mb-2">        min_length=min_length,</div>
+                            <div class="output mb-2">        length_penalty=2.0,</div>
+                            <div class="output mb-2">        early_stopping=True</div>
+                            <div class="output mb-2">    )</div>
+                            <div class="output mb-2">    </div>
+                            <div class="output mb-2">    summary = tokenizer.decode(summary_ids[0], skip_special_tokens=True)</div>
+                            <div class="output mb-2">    return summary</div>
+                            <div class="mb-2"><span class="command">article = """The latest research in artificial intelligence shows significant advancements in natural language processing. Scientists have developed new models that can understand context better than ever before. These models are being used in various applications including healthcare, education, and customer service. The technology continues to evolve at a rapid pace."""</span></div>
+                            <div class="mb-2"><span class="command">summary = summarize_text(article)</span></div>
+                            <div class="output success">Generated Summary:</div>
+                            <div class="output">"AI research shows advancements in natural language processing. New models understand context better and are used in healthcare, education, and customer service. Technology evolves rapidly."</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Best Practices -->
+        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                <i class="fas fa-star mr-3 text-yellow-500"></i>
+                Best Practices & Tips
+            </h2>
+            <div class="grid md:grid-cols-2 gap-6">
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Training Tips</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start p-3 bg-blue-50 rounded-lg">
+                            <i class="fas fa-lightbulb text-blue-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-blue-800">Start Small</h4>
+                                <p class="text-sm text-blue-700">Begin with a smaller model like BART-base before scaling to larger models.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-3 bg-green-50 rounded-lg">
+                            <i class="fas fa-sync-alt text-green-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-green-800">Use Appropriate Batch Size</h4>
+                                <p class="text-sm text-green-700">Adjust batch size based on available GPU memory (4-8 is typical for Colab).</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-3 bg-purple-50 rounded-lg">
+                            <i class="fas fa-tachometer-alt text-purple-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-purple-800">Monitor Training</h4>
+                                <p class="text-sm text-purple-700">Keep an eye on loss curves and adjust learning rate if needed.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-gray-800">Model Selection</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-start p-3 bg-indigo-50 rounded-lg">
+                            <i class="fas fa-chart-bar text-indigo-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-indigo-800">BART</h4>
+                                <p class="text-sm text-indigo-700">Great for abstractive summarization, balances quality and speed.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-3 bg-pink-50 rounded-lg">
+                            <i class="fas fa-bullseye text-pink-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-pink-800">T5</h4>
+                                <p class="text-sm text-pink-700">Versatile model that works well across different summarization tasks.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start p-3 bg-orange-50 rounded-lg">
+                            <i class="fas fa-crown text-orange-500 mt-1 mr-3"></i>
+                            <div>
+                                <h4 class="font-medium text-orange-800">Pegasus</h4>
+                                <p class="text-sm text-orange-700">Specifically designed for summarization, often achieves state-of-the-art results.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conclusion -->
+        <div class="bg-gradient-to-r from-purple-600 to-blue-500 rounded-2xl shadow-xl p-8 text-white">
+            <h2 class="text-2xl font-bold mb-6 flex items-center">
+                <i class="fas fa-check-circle mr-3"></i>
+                Conclusion
+            </h2>
+            <p class="text-lg mb-6 opacity-90">
+                You've now learned how to build a complete text summarization pipeline using Hugging Face models on Google Colab. 
+                This approach leverages transfer learning to create powerful summarization models with relatively little data and computational resources.
+            </p>
+            <div class="grid md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="bg-white bg-opacity-20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-rocket text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold mb-2">Fast Development</h3>
+                    <p class="text-sm opacity-90">Leverage pre-trained models to build powerful applications quickly.</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-white bg-opacity-20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-gem text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold mb-2">High Quality</h3>
+                    <p class="text-sm opacity-90">Achieve state-of-the-art results with minimal fine-tuning.</p>
+                </div>
+                <div class="text-center">
+                    <div class="bg-white bg-opacity-20 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-cloud-download-alt text-xl"></i>
+                    </div>
+                    <h3 class="font-semibold mb-2">Easy Deployment</h3>
+                    <p class="text-sm opacity-90">Save and share your models easily with the Hugging Face ecosystem.</p>
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <p class="text-sm opacity-80">Now you're ready to build your own text summarization applications!</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+```
