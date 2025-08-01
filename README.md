@@ -1,5 +1,7 @@
 # Text Summarizer - AI-Powered Dialogue Summarization
 
+## https://mk-knight23.github.io/HuggingFace-Google-Collab-2
+
 A fine-tuned PEGASUS model for generating concise summaries from conversational text using the SAMSum dataset.
 
 ## 🚀 Quick Start
